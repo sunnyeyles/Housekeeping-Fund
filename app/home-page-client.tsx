@@ -5,15 +5,14 @@ import { RoomCard } from "@/components/room-card";
 import { PledgeModal } from "@/components/pledge-modal";
 import { loadPledges } from "@/lib/storage";
 
-export function HomePageClient() {
-  const [roomTotals, setRoomTotals] = useState<
-    Record<"bathroom" | "kitchen" | "lounge", number>
-  >({
-    bathroom: 0,
-    kitchen: 0,
-    lounge: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+interface HomePageClientProps {
+  roomTotals: Record<"bathroom" | "kitchen" | "lounge", number>;
+}
+
+export function HomePageClient({
+  roomTotals: initialRoomTotals,
+}: HomePageClientProps) {
+  const [roomTotals, setRoomTotals] = useState(initialRoomTotals);
   const [selectedRoom, setSelectedRoom] = useState<
     "bathroom" | "kitchen" | "lounge" | null
   >(null);
@@ -28,7 +27,7 @@ export function HomePageClient() {
         const roomTotalsData = data.pledges.reduce(
           (
             acc: Record<"bathroom" | "kitchen" | "lounge", number>,
-            pledge: any
+            pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
           ) => {
             acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
             return acc;
@@ -39,8 +38,6 @@ export function HomePageClient() {
         setRoomTotals(roomTotalsData);
       } catch (error) {
         console.error("Error loading pledges data:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -67,7 +64,7 @@ export function HomePageClient() {
         const roomTotalsData = data.pledges.reduce(
           (
             acc: Record<"bathroom" | "kitchen" | "lounge", number>,
-            pledge: any
+            pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
           ) => {
             acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
             return acc;

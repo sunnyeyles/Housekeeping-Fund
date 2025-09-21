@@ -3,17 +3,17 @@
 import { useState, useEffect } from "react";
 import { loadPledges } from "@/lib/storage";
 
-export function StatsSection() {
-  const [roomTotals, setRoomTotals] = useState<
-    Record<"bathroom" | "kitchen" | "lounge", number>
-  >({
-    bathroom: 0,
-    kitchen: 0,
-    lounge: 0,
-  });
-  const [personTotals, setPersonTotals] = useState<
-    Array<{ name: string; total: number; email: string }>
-  >([]);
+interface StatsSectionProps {
+  roomTotals: Record<"bathroom" | "kitchen" | "lounge", number>;
+  personTotals: Array<{ name: string; total: number; email: string }>;
+}
+
+export function StatsSection({
+  roomTotals: initialRoomTotals,
+  personTotals: initialPersonTotals,
+}: StatsSectionProps) {
+  const [roomTotals, setRoomTotals] = useState(initialRoomTotals);
+  const [personTotals, setPersonTotals] = useState(initialPersonTotals);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export function StatsSection() {
         const roomTotalsData = data.pledges.reduce(
           (
             acc: Record<"bathroom" | "kitchen" | "lounge", number>,
-            pledge: any
+            pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
           ) => {
             acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
             return acc;
@@ -38,19 +38,21 @@ export function StatsSection() {
           string,
           { total: number; email: string }
         >();
-        data.pledges.forEach((pledge: any) => {
-          const key = pledge.name.toLowerCase();
-          const existing = personTotalsMap.get(key);
-          if (existing) {
-            existing.total += pledge.amount;
-            existing.email = pledge.email;
-          } else {
-            personTotalsMap.set(key, {
-              total: pledge.amount,
-              email: pledge.email,
-            });
+        data.pledges.forEach(
+          (pledge: { name: string; amount: number; email: string }) => {
+            const key = pledge.name.toLowerCase();
+            const existing = personTotalsMap.get(key);
+            if (existing) {
+              existing.total += pledge.amount;
+              existing.email = pledge.email;
+            } else {
+              personTotalsMap.set(key, {
+                total: pledge.amount,
+                email: pledge.email,
+              });
+            }
           }
-        });
+        );
 
         const personTotalsData = Array.from(personTotalsMap.entries())
           .map(([name, data]) => ({

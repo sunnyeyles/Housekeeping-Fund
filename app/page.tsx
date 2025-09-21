@@ -26,8 +26,11 @@ export default async function HomePage() {
 
   // Process room totals
   const roomTotals = data.pledges.reduce(
-    (acc: Record<"bathroom" | "kitchen" | "lounge", number>, pledge: any) => {
-      acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount; // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    (
+      acc: Record<"bathroom" | "kitchen" | "lounge", number>,
+      pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
+    ) => {
+      acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
       return acc;
     },
     { bathroom: 0, kitchen: 0, lounge: 0 }
@@ -35,19 +38,21 @@ export default async function HomePage() {
 
   // Process person totals
   const personTotalsMap = new Map<string, { total: number; email: string }>();
-  data.pledges.forEach((pledge: any) => {
-    const key = pledge.name.toLowerCase();
-    const existing = personTotalsMap.get(key);
-    if (existing) {
-      existing.total += pledge.amount;
-      existing.email = pledge.email;
-    } else {
-      personTotalsMap.set(key, {
-        total: pledge.amount,
-        email: pledge.email,
-      });
+  data.pledges.forEach(
+    (pledge: { name: string; amount: number; email: string }) => {
+      const key = pledge.name.toLowerCase();
+      const existing = personTotalsMap.get(key);
+      if (existing) {
+        existing.total += pledge.amount;
+        existing.email = pledge.email;
+      } else {
+        personTotalsMap.set(key, {
+          total: pledge.amount,
+          email: pledge.email,
+        });
+      }
     }
-  });
+  );
 
   const personTotals = Array.from(personTotalsMap.entries())
     .map(([name, data]) => ({
