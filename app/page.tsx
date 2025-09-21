@@ -23,9 +23,17 @@ export default function HomePage() {
   >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const loadData = () => {
-    setRoomTotals(getPledgesByRoom());
-    setPersonTotals(getPledgesByPerson());
+  const loadData = async () => {
+    try {
+      const [roomData, personData] = await Promise.all([
+        getPledgesByRoom(),
+        getPledgesByPerson(),
+      ]);
+      setRoomTotals(roomData);
+      setPersonTotals(personData);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
   };
 
   useEffect(() => {

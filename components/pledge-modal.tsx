@@ -85,23 +85,33 @@ export function PledgeModal({
     setIsSubmitting(true);
 
     try {
-      addPledge(name.trim(), pledgeAmount, room, email.trim());
+      const success = await addPledge(
+        name.trim(),
+        pledgeAmount,
+        room,
+        email.trim()
+      );
 
-      toast({
-        title: "Pledge Confirmed!",
-        description: `Your $${pledgeAmount.toFixed(2)} pledge to the ${
-          roomNames[room]
-        } has been recorded.`,
-      });
+      if (success) {
+        toast({
+          title: "Pledge Confirmed!",
+          description: `Your $${pledgeAmount.toFixed(2)} pledge to the ${
+            roomNames[room]
+          } has been recorded.`,
+        });
 
-      // Reset form
-      setAmount("");
-      setName("");
-      setEmail("");
+        // Reset form
+        setAmount("");
+        setName("");
+        setEmail("");
 
-      onPledgeAdded();
-      onClose();
-    } catch {
+        onPledgeAdded();
+        onClose();
+      } else {
+        throw new Error("Failed to save pledge");
+      }
+    } catch (error) {
+      console.error("Error adding pledge:", error);
       toast({
         title: "Error",
         description: "Failed to record your pledge. Please try again.",

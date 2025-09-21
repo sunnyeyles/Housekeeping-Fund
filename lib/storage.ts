@@ -10,9 +10,10 @@ export interface Pledge {
 export interface PledgeData {
   pledges: Pledge[];
   startDate: number;
+  lastUpdated?: number;
 }
 
-const STORAGE_KEY = "cleaning-pledges";
+const API_BASE_URL = "/api/pledges";
 
 // Normalize name: trim, lowercase, then capitalize first letter
 export function normalizeName(name: string): string {
@@ -21,44 +22,57 @@ export function normalizeName(name: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
-export function loadPledges(): PledgeData {
+export async function loadPledges(): Promise<PledgeData> {
   if (typeof window === "undefined") {
     return { pledges: [], startDate: Date.now() };
   }
 
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
+    const response = await fetch(API_BASE_URL);
+    if (response.ok) {
+      const data = await response.json();
+      return data;
     }
   } catch (error) {
     console.error("Error loading pledges:", error);
   }
 
-  // Initialize with start date if no data exists
-  const initialData = { pledges: [], startDate: Date.now() };
-  savePledges(initialData);
-  return initialData;
+  // Return empty data if fetch fails
+  return { pledges: [], startDate: Date.now() };
 }
 
-export function savePledges(data: PledgeData): void {
-  if (typeof window === "undefined") return;
+export async function savePledges(data: PledgeData): Promise<boolean> {
+  if (typeof window === "undefined") return false;
 
   try {
-    // localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log("Saving pledges:", data);
+    const response = await fetch(API_BASE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (response.ok) {
+      console.log("Pledges saved successfully:", data);
+      return true;
+    } else {
+      console.error("Failed to save pledges:", response.statusText);
+      return false;
+    }
   } catch (error) {
     console.error("Error saving pledges:", error);
+    return false;
   }
 }
 
-export function addPledge(
+export async function addPledge(
   name: string,
   amount: number,
   room: Pledge["room"],
   email: string
-): void {
-  const data = loadPledges();
+): Promise<boolean> {
+  const data = await loadPledges();
   const normalizedName = normalizeName(name);
 
   // Find existing pledge from same person for same room and update, or create new
@@ -85,11 +99,13 @@ export function addPledge(
     data.pledges.push(newPledge);
   }
 
-  savePledges(data);
+  return await savePledges(data);
 }
 
-export function getPledgesByRoom(): Record<Pledge["room"], number> {
-  const data = loadPledges();
+export async function getPledgesByRoom(): Promise<
+  Record<Pledge["room"], number>
+> {
+  const data = await loadPledges();
   return data.pledges.reduce(
     (acc, pledge) => {
       acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
@@ -99,12 +115,14 @@ export function getPledgesByRoom(): Record<Pledge["room"], number> {
   );
 }
 
-export function getPledgesByPerson(): Array<{
-  name: string;
-  total: number;
-  email: string;
-}> {
-  const data = loadPledges();
+export async function getPledgesByPerson(): Promise<
+  Array<{
+    name: string;
+    total: number;
+    email: string;
+  }>
+> {
+  const data = await loadPledges();
   const personTotals = new Map<string, { total: number; email: string }>();
 
   data.pledges.forEach((pledge) => {
@@ -131,7 +149,7 @@ export function getPledgesByPerson(): Array<{
     .sort((a, b) => b.total - a.total);
 }
 
-export function getStartDate(): number {
-  const data = loadPledges();
+export async function getStartDate(): Promise<number> {
+  const data = await loadPledges();
   return data.startDate;
 }
