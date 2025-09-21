@@ -28,16 +28,27 @@ export async function loadPledges(): Promise<PledgeData> {
   }
 
   try {
+    console.log("Loading pledges from API:", API_BASE_URL);
     const response = await fetch(API_BASE_URL);
+    console.log("API response status:", response.status, response.ok);
+
     if (response.ok) {
       const data = await response.json();
+      console.log("API response data:", data);
       return data;
+    } else {
+      console.error(
+        "API response not ok:",
+        response.status,
+        response.statusText
+      );
     }
   } catch (error) {
     console.error("Error loading pledges:", error);
   }
 
   // Return empty data if fetch fails
+  console.log("Returning empty pledges data");
   return { pledges: [], startDate: Date.now() };
 }
 

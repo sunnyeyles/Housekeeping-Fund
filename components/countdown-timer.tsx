@@ -18,44 +18,59 @@ export function CountdownTimer() {
     seconds: 0,
   });
   const [isExpired, setIsExpired] = useState(false);
+  const [endDate, setEndDate] = useState<number | null>(null);
 
   useEffect(() => {
-    const calculateTimeLeft = async () => {
+    // Get start date only once when component mounts
+    const initializeTimer = async () => {
       try {
         const startDate = await getStartDate();
-        const endDate = startDate + 14 * 24 * 60 * 60 * 1000; // 2 weeks from start
-        const now = Date.now();
-        const difference = endDate - now;
-
-        if (difference > 0) {
-          const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-          const hours = Math.floor(
-            (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-          );
-          const minutes = Math.floor(
-            (difference % (1000 * 60 * 60)) / (1000 * 60)
-          );
-          const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-          setTimeLeft({ days, hours, minutes, seconds });
-          setIsExpired(false);
-        } else {
-          setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-          setIsExpired(true);
-        }
+        const calculatedEndDate = startDate + 14 * 24 * 60 * 60 * 1000; // 2 weeks from start
+        setEndDate(calculatedEndDate);
       } catch (error) {
-        console.error("Error calculating time left:", error);
-        // Fallback to current time if there's an error
-        setTimeLeft({ days: 14, hours: 0, minutes: 0, seconds: 0 });
-        setIsExpired(false);
+        console.error("Error getting start date:", error);
+        // Fallback to current time + 2 weeks if there's an error
+        setEndDate(Date.now() + 14 * 24 * 60 * 60 * 1000);
       }
     };
 
+    initializeTimer();
+  }, []);
+
+  useEffect(() => {
+    // Only run the timer if we have an end date
+    if (endDate === null) return;
+
+    const calculateTimeLeft = () => {
+      const now = Date.now();
+      const difference = endDate - now;
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60)
+        );
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        setTimeLeft({ days, hours, minutes, seconds });
+        setIsExpired(false);
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setIsExpired(true);
+      }
+    };
+
+    // Calculate immediately
     calculateTimeLeft();
+
+    // Then update every second
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [endDate]);
 
   return (
     <div className="brutal-card p-4 md:p-8">

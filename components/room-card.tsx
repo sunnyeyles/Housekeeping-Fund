@@ -79,7 +79,7 @@ export function RoomCard({ room, amount, onPledge }: RoomCardProps) {
               isHovered ? "scale-105" : "scale-100"
             )}
           >
-            Pledge Now
+            Chip in
           </button>
         </div>
       </div>

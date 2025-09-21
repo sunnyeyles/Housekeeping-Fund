@@ -1,58 +1,61 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { RoomCard } from "@/components/room-card";
 import { StatsSection } from "@/components/stats-section";
-import { PledgeModal } from "@/components/pledge-modal";
 import { CountdownTimer } from "@/components/countdown-timer";
-import { getPledgesByRoom, getPledgesByPerson } from "@/lib/storage";
+import { HomePageClient } from "./home-page-client";
 
-export default function HomePage() {
-  const [roomTotals, setRoomTotals] = useState<
-    Record<"bathroom" | "kitchen" | "lounge", number>
-  >({
-    bathroom: 0,
-    kitchen: 0,
-    lounge: 0,
-  });
-  const [personTotals, setPersonTotals] = useState<
-    Array<{ name: string; total: number; email: string }>
-  >([]);
-  const [selectedRoom, setSelectedRoom] = useState<
-    "bathroom" | "kitchen" | "lounge" | null
-  >(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+async function getPledgesData() {
+  try {
+    // Try to fetch from our API endpoint first (which handles the blob storage internally)
+    const response = await fetch("http://localhost:3000/api/pledges", {
+      cache: "no-store",
+    });
 
-  const loadData = async () => {
-    try {
-      const [roomData, personData] = await Promise.all([
-        getPledgesByRoom(),
-        getPledgesByPerson(),
-      ]);
-      setRoomTotals(roomData);
-      setPersonTotals(personData);
-    } catch (error) {
-      console.error("Error loading data:", error);
+    if (response.ok) {
+      const data = await response.json();
+      return data;
     }
-  };
+  } catch (error) {
+    console.error("Error fetching pledges data:", error);
+  }
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Fallback to empty data if API fails
+  return { pledges: [], startDate: Date.now() };
+}
 
-  const handlePledge = (room: "bathroom" | "kitchen" | "lounge") => {
-    setSelectedRoom(room);
-    setIsModalOpen(true);
-  };
+export default async function HomePage() {
+  const data = await getPledgesData();
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedRoom(null);
-  };
+  // Process room totals
+  const roomTotals = data.pledges.reduce(
+    (acc: Record<"bathroom" | "kitchen" | "lounge", number>, pledge: any) => {
+      acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount; // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      return acc;
+    },
+    { bathroom: 0, kitchen: 0, lounge: 0 }
+  );
 
-  const handlePledgeAdded = () => {
-    loadData();
-  };
+  // Process person totals
+  const personTotalsMap = new Map<string, { total: number; email: string }>();
+  data.pledges.forEach((pledge: any) => {
+    const key = pledge.name.toLowerCase();
+    const existing = personTotalsMap.get(key);
+    if (existing) {
+      existing.total += pledge.amount;
+      existing.email = pledge.email;
+    } else {
+      personTotalsMap.set(key, {
+        total: pledge.amount,
+        email: pledge.email,
+      });
+    }
+  });
+
+  const personTotals = Array.from(personTotalsMap.entries())
+    .map(([name, data]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      total: data.total,
+      email: data.email,
+    }))
+    .sort((a, b) => b.total - a.total);
 
   return (
     <div className="min-h-screen bg-white">
@@ -79,30 +82,7 @@ export default function HomePage() {
         </div>
 
         {/* Room Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12">
-          <RoomCard
-            room="bathroom"
-            amount={roomTotals.bathroom}
-            onPledge={handlePledge}
-          />
-          <RoomCard
-            room="kitchen"
-            amount={roomTotals.kitchen}
-            onPledge={handlePledge}
-          />
-          <RoomCard
-            room="lounge"
-            amount={roomTotals.lounge}
-            onPledge={handlePledge}
-          />
-        </div>
-
-        <PledgeModal
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          room={selectedRoom}
-          onPledgeAdded={handlePledgeAdded}
-        />
+        <HomePageClient roomTotals={roomTotals} />
       </div>
     </div>
   );
