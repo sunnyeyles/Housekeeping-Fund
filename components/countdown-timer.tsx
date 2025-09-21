@@ -20,27 +20,36 @@ export function CountdownTimer() {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const startDate = getStartDate();
-      const endDate = startDate + 14 * 24 * 60 * 60 * 1000; // 2 weeks from start
-      const now = Date.now();
-      const difference = endDate - now;
+    const calculateTimeLeft = async () => {
+      try {
+        const startDate = await getStartDate();
+        const endDate = startDate + 14 * 24 * 60 * 60 * 1000; // 2 weeks from start
+        const now = Date.now();
+        const difference = endDate - now;
 
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-        );
-        const minutes = Math.floor(
-          (difference % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+        if (difference > 0) {
+          const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+          const hours = Math.floor(
+            (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          );
+          const minutes = Math.floor(
+            (difference % (1000 * 60 * 60)) / (1000 * 60)
+          );
+          const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-        setTimeLeft({ days, hours, minutes, seconds });
+          setTimeLeft({ days, hours, minutes, seconds });
+          setIsExpired(false);
+        } else {
+          setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+          setIsExpired(true);
+        }
+      } catch (error) {
+        console.error("Error calculating time left:", error);
+        // Fallback to current time if there's an error
+        const now = Date.now();
+        const endDate = now + 14 * 24 * 60 * 60 * 1000; // 2 weeks from now
+        setTimeLeft({ days: 14, hours: 0, minutes: 0, seconds: 0 });
         setIsExpired(false);
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        setIsExpired(true);
       }
     };
 
