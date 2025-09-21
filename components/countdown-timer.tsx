@@ -46,8 +46,6 @@ export function CountdownTimer() {
       } catch (error) {
         console.error("Error calculating time left:", error);
         // Fallback to current time if there's an error
-        const now = Date.now();
-        const endDate = now + 14 * 24 * 60 * 60 * 1000; // 2 weeks from now
         setTimeLeft({ days: 14, hours: 0, minutes: 0, seconds: 0 });
         setIsExpired(false);
       }

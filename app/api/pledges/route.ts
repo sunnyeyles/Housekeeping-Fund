@@ -4,11 +4,19 @@ import { put, del } from "@vercel/blob";
 const BLOB_KEY = "housekeeping-pledges.json";
 const BLOB_URL_KEY = "housekeeping-pledges-url.txt";
 
+// Verify environment variable is available
+function verifyBlobToken() {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new Error("BLOB_READ_WRITE_TOKEN environment variable is required");
+  }
+}
+
 // Store the blob URL for easy retrieval
 async function storeBlobUrl(url: string) {
   await put(BLOB_URL_KEY, url, {
     access: "public",
     contentType: "text/plain",
+    allowOverwrite: true,
   });
 }
 
@@ -48,6 +56,7 @@ async function fetchPledgesData() {
 
 export async function GET() {
   try {
+    verifyBlobToken();
     const pledgeData = await fetchPledgesData();
     return NextResponse.json(pledgeData);
   } catch (error) {
@@ -61,6 +70,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    verifyBlobToken();
     const body = await request.json();
     const { pledges, startDate } = body;
 
@@ -81,6 +91,7 @@ export async function POST(request: NextRequest) {
     const { url } = await put(BLOB_KEY, JSON.stringify(pledgeData), {
       access: "public",
       contentType: "application/json",
+      allowOverwrite: true,
     });
 
     // Store the blob URL for easy retrieval
@@ -103,6 +114,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    verifyBlobToken();
     const body = await request.json();
     const { pledges, startDate } = body;
 
@@ -123,6 +135,7 @@ export async function PUT(request: NextRequest) {
     const { url } = await put(BLOB_KEY, JSON.stringify(pledgeData), {
       access: "public",
       contentType: "application/json",
+      allowOverwrite: true,
     });
 
     // Update the stored blob URL
@@ -145,6 +158,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE() {
   try {
+    verifyBlobToken();
     // Delete the pledges data from Vercel blob storage
     await del(BLOB_KEY);
     await del(BLOB_URL_KEY);

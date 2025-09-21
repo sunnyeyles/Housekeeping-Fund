@@ -20,9 +20,6 @@ export function StatsSection({ roomTotals, personTotals }: StatsSectionProps) {
         <div className="text-4xl md:text-6xl font-black text-black mb-2 md:mb-4 tracking-widest">
           ${totalPledged.toFixed(2)} / ${target}
         </div>
-        <div className="text-lg md:text-xl font-bold text-black uppercase tracking-widest mb-4">
-          Total amount for Cleaning
-        </div>
 
         {/* Progress bar */}
         <div className="brutal-border bg-white p-2">
