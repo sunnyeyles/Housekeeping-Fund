@@ -21,20 +21,36 @@ export function CountdownTimer() {
   const [endDate, setEndDate] = useState<number | null>(null);
 
   useEffect(() => {
-    // Get start date only once when component mounts
-    const initializeTimer = async () => {
-      try {
-        const startDate = await getStartDate();
-        const calculatedEndDate = startDate + 14 * 24 * 60 * 60 * 1000; // 2 weeks from start
-        setEndDate(calculatedEndDate);
-      } catch (error) {
-        console.error("Error getting start date:", error);
-        // Fallback to current time + 2 weeks if there's an error
-        setEndDate(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    // Calculate next Saturday at 12pm
+    const getNextSaturday12PM = () => {
+      const now = new Date();
+      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const daysUntilSaturday = (6 - currentDay) % 7; // Days until next Saturday (0 if today is Saturday)
+
+      // If it's Saturday and before 12pm, use today; otherwise use next Saturday
+      const isTodaySaturday = currentDay === 6;
+      const isBefore12PM = now.getHours() < 12;
+
+      let targetDate;
+      if (isTodaySaturday && isBefore12PM) {
+        // Today is Saturday and it's before 12pm, use today
+        targetDate = new Date(now);
+      } else {
+        // Use next Saturday
+        targetDate = new Date(now);
+        targetDate.setDate(
+          now.getDate() + (daysUntilSaturday === 0 ? 7 : daysUntilSaturday)
+        );
       }
+
+      // Set time to 12:00:00 PM
+      targetDate.setHours(12, 0, 0, 0);
+
+      return targetDate.getTime();
     };
 
-    initializeTimer();
+    const calculatedEndDate = getNextSaturday12PM();
+    setEndDate(calculatedEndDate);
   }, []);
 
   useEffect(() => {
@@ -76,7 +92,9 @@ export function CountdownTimer() {
     <div className="brutal-card p-4 md:p-8">
       <div className="text-center">
         <h3 className="text-lg md:text-2xl font-black text-black mb-4 md:mb-8 uppercase tracking-widest">
-          {isExpired ? "Pledge Period Ended" : "Time Remaining until cleaner"}
+          {isExpired
+            ? "Pledge Period Ended"
+            : "Time Remaining until cleaner arrives"}
         </h3>
 
         {isExpired ? (

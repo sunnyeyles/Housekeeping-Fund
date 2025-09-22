@@ -13,7 +13,14 @@ export interface PledgeData {
   lastUpdated?: number;
 }
 
-const API_BASE_URL = "/api/pledges";
+// Empty pledges data structure (fallback when API is not available)
+const emptyPledgesData: PledgeData = {
+  pledges: [],
+  startDate: Date.now() - 604800000, // 7 days ago
+  lastUpdated: Date.now(),
+};
+
+// No longer needed since we're using localStorage directly
 
 // Normalize name: trim, lowercase, then capitalize first letter
 export function normalizeName(name: string): string {
@@ -22,59 +29,60 @@ export function normalizeName(name: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
+// Fetch pledges data from Redis API
+async function fetchPledgesData(): Promise<PledgeData> {
+  try {
+    console.log("Fetching pledges from Redis API");
+
+    const response = await fetch("/api/pledges");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Successfully fetched pledges from Redis API:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching pledges data from Redis API:", error);
+    console.log("Returning empty pledges data due to error");
+    return emptyPledgesData;
+  }
+}
+
+// Save pledges data to Redis API
+async function savePledgesData(data: PledgeData): Promise<boolean> {
+  try {
+    const pledgeData: PledgeData = {
+      ...data,
+      lastUpdated: Date.now(),
+    };
+
+    console.log("Saving pledges data to Redis API:", pledgeData);
+
+    // This function is no longer used since addPledge calls the API directly
+    // Keeping for backward compatibility but it won't be called
+    console.log("savePledgesData is deprecated - use addPledge instead");
+
+    return true;
+  } catch (error) {
+    console.error("Error saving pledges data:", error);
+    return false;
+  }
+}
+
+// Public API functions
 export async function loadPledges(): Promise<PledgeData> {
   if (typeof window === "undefined") {
-    return { pledges: [], startDate: Date.now() };
+    return emptyPledgesData;
   }
 
-  try {
-    console.log("Loading pledges from API:", API_BASE_URL);
-    const response = await fetch(API_BASE_URL);
-    console.log("API response status:", response.status, response.ok);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log("API response data:", data);
-      return data;
-    } else {
-      console.error(
-        "API response not ok:",
-        response.status,
-        response.statusText
-      );
-    }
-  } catch (error) {
-    console.error("Error loading pledges:", error);
-  }
-
-  // Return empty data if fetch fails
-  console.log("Returning empty pledges data");
-  return { pledges: [], startDate: Date.now() };
+  return await fetchPledgesData();
 }
 
 export async function savePledges(data: PledgeData): Promise<boolean> {
   if (typeof window === "undefined") return false;
 
-  try {
-    const response = await fetch(API_BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (response.ok) {
-      console.log("Pledges saved successfully:", data);
-      return true;
-    } else {
-      console.error("Failed to save pledges:", response.statusText);
-      return false;
-    }
-  } catch (error) {
-    console.error("Error saving pledges:", error);
-    return false;
-  }
+  return await savePledgesData(data);
 }
 
 export async function addPledge(
@@ -83,34 +91,35 @@ export async function addPledge(
   room: Pledge["room"],
   email: string
 ): Promise<boolean> {
-  const data = await loadPledges();
-  const normalizedName = normalizeName(name);
+  try {
+    console.log("Adding pledge via Redis API:", { name, amount, room, email });
 
-  // Find existing pledge from same person for same room and update, or create new
-  const existingIndex = data.pledges.findIndex(
-    (p) =>
-      p.name.toLowerCase() === normalizedName.toLowerCase() && p.room === room
-  );
+    const response = await fetch("/api/pledges/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        amount,
+        room,
+        email,
+      }),
+    });
 
-  if (existingIndex >= 0) {
-    // Update existing pledge
-    data.pledges[existingIndex].amount += amount;
-    data.pledges[existingIndex].email = email;
-    data.pledges[existingIndex].timestamp = Date.now();
-  } else {
-    // Create new pledge
-    const newPledge: Pledge = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name: normalizedName,
-      amount,
-      room,
-      email,
-      timestamp: Date.now(),
-    };
-    data.pledges.push(newPledge);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Redis API error:", errorData);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log("Pledge added successfully to Redis:", result);
+    return true;
+  } catch (error) {
+    console.error("Error adding pledge to Redis:", error);
+    return false;
   }
-
-  return await savePledges(data);
 }
 
 export async function getPledgesByRoom(): Promise<

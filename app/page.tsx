@@ -1,31 +1,49 @@
-import { StatsSection } from "@/components/stats-section";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { HomePageClient } from "./home-page-client";
 
 async function getPledgesData() {
   try {
-    // Try to fetch from our API endpoint first (which handles the blob storage internally)
-    const response = await fetch("http://localhost:3000/api/pledges", {
-      cache: "no-store",
+    // Get pledges data from Redis API
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+
+    const response = await fetch(`${baseUrl}/api/pledges`, {
+      cache: "no-store", // Ensure we get fresh data from Redis
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      return data;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  } catch (error) {
-    console.error("Error fetching pledges data:", error);
-  }
 
-  // Fallback to empty data if API fails
-  return { pledges: [], startDate: Date.now() };
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching pledges data from Redis:", error);
+    // Fallback to empty data
+    return {
+      pledges: [],
+      startDate: Date.now() - 604800000, // 7 days ago
+      lastUpdated: Date.now(),
+    };
+  }
 }
 
 export default async function HomePage() {
   const data = await getPledgesData();
 
+  // Type guard to ensure data has the expected structure
+  const pledgesData = data as {
+    pledges: Array<{
+      room: "bathroom" | "kitchen" | "lounge";
+      amount: number;
+      name: string;
+      email: string;
+    }>;
+  };
+
   // Process room totals
-  const roomTotals = data.pledges.reduce(
+  const roomTotals = pledgesData.pledges.reduce(
     (
       acc: Record<"bathroom" | "kitchen" | "lounge", number>,
       pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
@@ -38,7 +56,7 @@ export default async function HomePage() {
 
   // Process person totals
   const personTotalsMap = new Map<string, { total: number; email: string }>();
-  data.pledges.forEach(
+  pledgesData.pledges.forEach(
     (pledge: { name: string; amount: number; email: string }) => {
       const key = pledge.name.toLowerCase();
       const existing = personTotalsMap.get(key);
@@ -81,13 +99,8 @@ export default async function HomePage() {
           <CountdownTimer />
         </div>
 
-        {/* Stats Section */}
-        <div className="mb-16">
-          <StatsSection roomTotals={roomTotals} personTotals={personTotals} />
-        </div>
-
-        {/* Room Cards */}
-        <HomePageClient roomTotals={roomTotals} />
+        {/* Room Cards and Stats */}
+        <HomePageClient roomTotals={roomTotals} personTotals={personTotals} />
       </div>
     </div>
   );

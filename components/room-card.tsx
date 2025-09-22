@@ -58,7 +58,7 @@ export function RoomCard({ room, amount, onPledge }: RoomCardProps) {
             ${amount.toFixed(2)}
           </div>
           <div className="text-xs font-bold text-black uppercase tracking-widest">
-            Pledged
+            Contributed
           </div>
         </div>
 

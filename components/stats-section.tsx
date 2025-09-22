@@ -1,90 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { loadPledges } from "@/lib/storage";
-
 interface StatsSectionProps {
   roomTotals: Record<"bathroom" | "kitchen" | "lounge", number>;
   personTotals: Array<{ name: string; total: number; email: string }>;
 }
 
-export function StatsSection({
-  roomTotals: initialRoomTotals,
-  personTotals: initialPersonTotals,
-}: StatsSectionProps) {
-  const [roomTotals, setRoomTotals] = useState(initialRoomTotals);
-  const [personTotals, setPersonTotals] = useState(initialPersonTotals);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await loadPledges();
-
-        // Process room totals
-        const roomTotalsData = data.pledges.reduce(
-          (
-            acc: Record<"bathroom" | "kitchen" | "lounge", number>,
-            pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
-          ) => {
-            acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
-            return acc;
-          },
-          { bathroom: 0, kitchen: 0, lounge: 0 }
-        );
-
-        // Process person totals
-        const personTotalsMap = new Map<
-          string,
-          { total: number; email: string }
-        >();
-        data.pledges.forEach(
-          (pledge: { name: string; amount: number; email: string }) => {
-            const key = pledge.name.toLowerCase();
-            const existing = personTotalsMap.get(key);
-            if (existing) {
-              existing.total += pledge.amount;
-              existing.email = pledge.email;
-            } else {
-              personTotalsMap.set(key, {
-                total: pledge.amount,
-                email: pledge.email,
-              });
-            }
-          }
-        );
-
-        const personTotalsData = Array.from(personTotalsMap.entries())
-          .map(([name, data]) => ({
-            name: name.charAt(0).toUpperCase() + name.slice(1),
-            total: data.total,
-            email: data.email,
-          }))
-          .sort((a, b) => b.total - a.total);
-
-        setRoomTotals(roomTotalsData);
-        setPersonTotals(personTotalsData);
-      } catch (error) {
-        console.error("Error loading pledges data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6 md:space-y-8">
-        <div className="brutal-card p-4 md:p-8 text-center">
-          <div className="text-2xl md:text-4xl font-black text-black tracking-widest">
-            Loading...
-          </div>
-        </div>
-      </div>
-    );
-  }
+export function StatsSection({ roomTotals, personTotals }: StatsSectionProps) {
   const totalPledged = Object.values(roomTotals).reduce(
     (sum, amount) => sum + amount,
     0
@@ -120,7 +41,7 @@ export function StatsSection({
         {/* Room breakdown - brutalist style */}
         <div className="brutal-card p-4 md:p-8">
           <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-black uppercase tracking-widest">
-            Cash collected by room
+            Amount contributed by room
           </h3>
           <div className="space-y-3 md:space-y-4">
             {Object.entries(roomTotals).map(([room, amount]) => (

@@ -94,7 +94,7 @@ export function PledgeModal({
 
       if (success) {
         toast({
-          title: "Pledge Confirmed!",
+          title: "Confirmed!",
           description: `Your $${pledgeAmount.toFixed(2)} pledge to the ${
             roomNames[room]
           } has been recorded.`,
@@ -139,7 +139,7 @@ export function PledgeModal({
         <div className="p-4 md:p-8">
           <DialogHeader className="mb-6 md:mb-8">
             <DialogTitle className="text-2xl md:text-4xl font-black text-center text-black uppercase tracking-widest">
-              Pledge to {roomNames[room]}
+              Contribute to {roomNames[room]}
             </DialogTitle>
           </DialogHeader>
 
@@ -217,7 +217,7 @@ export function PledgeModal({
                 className="brutal-button flex-1 bg-black text-white h-12 md:h-16 text-sm md:text-lg"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Processing..." : "Confirm Pledge"}
+                {isSubmitting ? "Processing..." : "Confirm"}
               </button>
             </div>
           </form>
