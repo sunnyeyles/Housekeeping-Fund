@@ -5,6 +5,7 @@ import { RoomCard } from "@/components/room-card";
 import { PledgeModal } from "@/components/pledge-modal";
 import { StatsSection } from "@/components/stats-section";
 import { loadPledges } from "@/lib/storage";
+import { TOTAL_TARGET } from "@/lib/config";
 
 interface HomePageClientProps {
   roomTotals: Record<"bathroom" | "kitchen" | "lounge", number>;
@@ -33,7 +34,7 @@ export function HomePageClient({
             acc: Record<"bathroom" | "kitchen" | "lounge", number>,
             pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
           ) => {
-            acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
+            acc[pledge.room] = (acc[pledge.room] || 0) + Number(pledge.amount);
             return acc;
           },
           { bathroom: 0, kitchen: 0, lounge: 0 }
@@ -49,11 +50,11 @@ export function HomePageClient({
             const key = pledge.name.toLowerCase();
             const existing = personTotalsMap.get(key);
             if (existing) {
-              existing.total += pledge.amount;
+              existing.total += Number(pledge.amount);
               existing.email = pledge.email;
             } else {
               personTotalsMap.set(key, {
-                total: pledge.amount,
+                total: Number(pledge.amount),
                 email: pledge.email,
               });
             }
@@ -66,7 +67,7 @@ export function HomePageClient({
             total: data.total,
             email: data.email,
           }))
-          .sort((a, b) => b.total - a.total);
+          .sort((a, b) => Number(b.total) - Number(a.total));
 
         setRoomTotals(roomTotalsData);
         setPersonTotals(personTotalsData);
@@ -100,7 +101,7 @@ export function HomePageClient({
             acc: Record<"bathroom" | "kitchen" | "lounge", number>,
             pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
           ) => {
-            acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
+            acc[pledge.room] = (acc[pledge.room] || 0) + Number(pledge.amount);
             return acc;
           },
           { bathroom: 0, kitchen: 0, lounge: 0 }
@@ -116,11 +117,11 @@ export function HomePageClient({
             const key = pledge.name.toLowerCase();
             const existing = personTotalsMap.get(key);
             if (existing) {
-              existing.total += pledge.amount;
+              existing.total += Number(pledge.amount);
               existing.email = pledge.email;
             } else {
               personTotalsMap.set(key, {
-                total: pledge.amount,
+                total: Number(pledge.amount),
                 email: pledge.email,
               });
             }
@@ -133,7 +134,7 @@ export function HomePageClient({
             total: data.total,
             email: data.email,
           }))
-          .sort((a, b) => b.total - a.total);
+          .sort((a, b) => Number(b.total) - Number(a.total));
 
         setRoomTotals(roomTotalsData);
         setPersonTotals(personTotalsData);
@@ -175,6 +176,11 @@ export function HomePageClient({
         isOpen={isModalOpen}
         onClose={handleModalClose}
         room={selectedRoom}
+        maxAmount={Math.max(
+          0,
+          TOTAL_TARGET -
+            (roomTotals.bathroom + roomTotals.kitchen + roomTotals.lounge)
+        )}
         onPledgeAdded={handlePledgeAdded}
       />
     </>

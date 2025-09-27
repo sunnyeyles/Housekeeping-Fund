@@ -128,7 +128,7 @@ export async function getPledgesByRoom(): Promise<
   const data = await loadPledges();
   return data.pledges.reduce(
     (acc, pledge) => {
-      acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
+      acc[pledge.room] = (acc[pledge.room] || 0) + Number(pledge.amount);
       return acc;
     },
     { bathroom: 0, kitchen: 0, lounge: 0 } as Record<Pledge["room"], number>
@@ -149,12 +149,12 @@ export async function getPledgesByPerson(): Promise<
     const key = pledge.name.toLowerCase();
     const existing = personTotals.get(key);
     if (existing) {
-      existing.total += pledge.amount;
+      existing.total += Number(pledge.amount);
       // Keep the most recent email
       existing.email = pledge.email;
     } else {
       personTotals.set(key, {
-        total: pledge.amount,
+        total: Number(pledge.amount),
         email: pledge.email,
       });
     }
@@ -166,7 +166,7 @@ export async function getPledgesByPerson(): Promise<
       total: data.total,
       email: data.email,
     }))
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => Number(b.total) - Number(a.total));
 }
 
 export async function getStartDate(): Promise<number> {

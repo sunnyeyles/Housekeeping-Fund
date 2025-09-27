@@ -48,7 +48,7 @@ export default async function HomePage() {
       acc: Record<"bathroom" | "kitchen" | "lounge", number>,
       pledge: { room: "bathroom" | "kitchen" | "lounge"; amount: number }
     ) => {
-      acc[pledge.room] = (acc[pledge.room] || 0) + pledge.amount;
+      acc[pledge.room] = (acc[pledge.room] || 0) + Number(pledge.amount);
       return acc;
     },
     { bathroom: 0, kitchen: 0, lounge: 0 }
@@ -61,11 +61,11 @@ export default async function HomePage() {
       const key = pledge.name.toLowerCase();
       const existing = personTotalsMap.get(key);
       if (existing) {
-        existing.total += pledge.amount;
+        existing.total += Number(pledge.amount);
         existing.email = pledge.email;
       } else {
         personTotalsMap.set(key, {
-          total: pledge.amount,
+          total: Number(pledge.amount),
           email: pledge.email,
         });
       }
@@ -78,7 +78,7 @@ export default async function HomePage() {
       total: data.total,
       email: data.email,
     }))
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => Number(b.total) - Number(a.total));
 
   return (
     <div className="min-h-screen bg-white">

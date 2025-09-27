@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
+import { TOTAL_TARGET } from "@/lib/config";
 
 // Initialize Redis with Upstash environment variables
 const redis = Redis.fromEnv();
@@ -63,6 +64,21 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedName = normalizeName(name);
+
+    // Enforce remaining target limit server-side
+    const totalSoFar = pledgesData.pledges.reduce(
+      (sum, p) => sum + p.amount,
+      0
+    );
+    const remaining = Math.max(0, TOTAL_TARGET - totalSoFar);
+    if (pledgeAmount > remaining) {
+      return NextResponse.json(
+        {
+          error: `Amount exceeds remaining available: ${remaining.toFixed(2)}`,
+        },
+        { status: 400 }
+      );
+    }
 
     // Find existing pledge from same person for same room and update, or create new
     const existingIndex = pledgesData.pledges.findIndex(

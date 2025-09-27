@@ -5,12 +5,14 @@ interface StatsSectionProps {
   personTotals: Array<{ name: string; total: number; email: string }>;
 }
 
+import { TOTAL_TARGET } from "@/lib/config";
+
 export function StatsSection({ roomTotals, personTotals }: StatsSectionProps) {
   const totalPledged = Object.values(roomTotals).reduce(
     (sum, amount) => sum + amount,
     0
   );
-  const target = 120;
+  const target = TOTAL_TARGET;
   const progressPercentage = Math.min((totalPledged / target) * 100, 100);
 
   return (

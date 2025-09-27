@@ -23,6 +23,7 @@ export async function GET() {
   try {
     // Fetch pledges data from Redis
     const pledgesData = await redis.get<PledgeData>("housekeeping-pledges");
+    console.log("pledgesData", pledgesData);
 
     if (pledgesData) {
       return NextResponse.json(pledgesData);

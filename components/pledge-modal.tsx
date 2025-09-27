@@ -18,6 +18,7 @@ interface PledgeModalProps {
   isOpen: boolean;
   onClose: () => void;
   room: "bathroom" | "kitchen" | "lounge" | null;
+  maxAmount?: number;
   onPledgeAdded: () => void;
 }
 
@@ -31,6 +32,7 @@ export function PledgeModal({
   isOpen,
   onClose,
   room,
+  maxAmount = Infinity,
   onPledgeAdded,
 }: PledgeModalProps) {
   const [amount, setAmount] = useState("");
@@ -48,6 +50,24 @@ export function PledgeModal({
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid amount greater than $0.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!Number.isFinite(maxAmount) || maxAmount <= 0) {
+      toast({
+        title: "Unavailable",
+        description: "No remaining amount available to pledge.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (pledgeAmount > maxAmount) {
+      toast({
+        title: "Too high",
+        description: `Please enter $${maxAmount.toFixed(2)} or less.`,
         variant: "destructive",
       });
       return;
@@ -156,6 +176,7 @@ export function PledgeModal({
                 type="number"
                 step="0.01"
                 min="0.01"
+                max={Number.isFinite(maxAmount) ? maxAmount : undefined}
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

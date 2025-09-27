@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Suspense } from "react";
 import "./globals.css";
 
+
 export const metadata: Metadata = {
   title: "Housekeeping Fund",
   description: "Keep the cockroaches out of the house!",
